@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+{% load crispy_forms_tags %}
+
+<h1>Customer Dashboard</h1>
+
+<!-- ===== DASHBOARD BUTTONS ===== -->
+<div class="dashboard-buttons" style="margin-bottom: 30px;">
+  <a href="{% url 'customer_profile' %}" class="btn btn-secondary mr-2">Profile</a>
+  <a href="{% url 'customer_messages' %}" class="btn btn-secondary mr-2">Messages / Feedback</a>
+  <a href="{% url 'spending_insights' %}" class="btn btn-secondary">Spending Insights</a>
+</div>
+
+<h2>Your Accounts</h2>
+<ul>
+  {% for acc in accounts %}
+  <li>
+    <a href="{% url 'account_detail' acc.id %}">
+      {{ acc.account_type.title }} Account #{{ acc.id }} - ${{ acc.balance }}
+    </a>
+    - <a href="{% url 'deposit' acc.id %}" class="btn btn-success btn-sm mr-1">Deposit</a>
+    <a href="{% url 'withdraw' acc.id %}" class="btn btn-warning btn-sm mr-1">Withdraw</a>
+    <a href="{% url 'transfer' acc.id %}" class="btn btn-primary btn-sm">Transfer</a>
+
+    <h3>Transaction History</h3>
+    {% if acc.account_transactions %}
+    <table>
+      <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Description</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for txn in acc.account_transactions %}
+      <tr>
+        <td>{{ txn.timestamp }}</td>
+        <td>{{ txn.transaction_type }}</td>
+        <td>${{ txn.amount }}</td>
+        <td>{{ txn.note }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% elif acc.transactions.all %}
+    <table>
+      <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Description</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for txn in acc.transactions.all %}
+      <tr>
+        <td>{{ txn.timestamp }}</td>
+        <td>{{ txn.transaction_type }}</td>
+        <td>${{ txn.amount }}</td>
+        <td>{{ txn.note }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No transactions found.</p>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+
+<h2>Balance Chart</h2>
+<div class="chart">
+  {% if balance_chart %}
+  {{ balance_chart|safe }}
+  {% else %}
+  <p>No accounts found.</p>
+  {% endif %}
+</div>
+
+<h2>Transaction Type Pie Chart</h2>
+<div class="chart">
+  {% if transaction_type_pie_chart %}
+  {{ transaction_type_pie_chart|safe }}
+  {% else %}
+  <p>No transaction data available.</p>
+  {% endif %}
+</div>
+
+<h3>Notifications</h3>
+<ul>
+  {% for note in notifications %}
+  <li {% if not note.is_read %}style="font-weight:bold"{% endif %}>
+    {{ note.message }} - {{ note.timestamp|date:"M d, Y H:i" }}
+  </li>
+  {% empty %}
+  <li>No notifications</li>
+  {% endfor %}
+</ul>
+
+<a href="{% url 'logout' %}" class="btn btn-danger mt-3">Logout</a>
+
+{% endblock %}

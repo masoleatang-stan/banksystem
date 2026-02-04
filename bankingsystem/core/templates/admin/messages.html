@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="admin-container">
+
+  <aside class="sidebar">
+    <h2 class="sidebar-logo">Bank Admin</h2>
+    <ul class="sidebar-menu">
+      <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'admin_messages' %}" class="active">Messages</a></li>
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="admin-main">
+    <h2>Customer Messages / Feedback</h2>
+    {% if messages %}
+    <div class="table-container">
+      <table>
+        <thead>
+        <tr>
+          <th>Sender</th>
+          <th>Receiver</th>
+          <th>Message</th>
+          <th>Timestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for msg in messages %}
+        <tr>
+          <td>{{ msg.sender.username }}</td>
+          <td>{{ msg.receiver.username }}</td>
+          <td>{{ msg.content }}</td>
+          <td>{{ msg.timestamp|date:"M d, Y H:i" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>No messages available.</p>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

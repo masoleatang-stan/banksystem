@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="admin-container">
+
+  <aside class="sidebar">
+    <h2 class="sidebar-logo">Bank Admin</h2>
+    <ul class="sidebar-menu">
+      <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'admin_transactions' %}" class="active">Transactions</a></li>
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="admin-main">
+    <h2>All Transactions</h2>
+
+    <!-- Filter Form -->
+    <form method="get">
+      <input type="text" name="account_id" placeholder="Account ID" value="{{ request.GET.account_id }}">
+      <input type="text" name="customer" placeholder="Customer username" value="{{ request.GET.customer }}">
+      <select name="type">
+        <option value="">All Types</option>
+        <option value="deposit" {% if request.GET.type=='deposit' %}selected{% endif %}>Deposit</option>
+        <option value="withdrawal" {% if request.GET.type=='withdrawal' %}selected{% endif %}>Withdrawal</option>
+        <option value="transfer" {% if request.GET.type=='transfer' %}selected{% endif %}>Transfer</option>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    </form>
+
+    {% if transactions %}
+    <div class="table-container">
+      <table>
+        <thead>
+        <tr>
+          <th>Account ID</th>
+          <th>Customer</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Timestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for tx in transactions %}
+        <tr>
+          <td>{{ tx.account.id }}</td>
+          <td>{{ tx.account.user.username }}</td>
+          <td>{{ tx.transaction_type }}</td>
+          <td>${{ tx.amount }}</td>
+          <td>{{ tx.timestamp|date:"M d, Y H:i" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>No transactions found.</p>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

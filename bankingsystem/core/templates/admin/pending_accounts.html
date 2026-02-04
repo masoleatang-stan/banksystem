@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="admin-container">
+
+  <aside class="sidebar">
+    <h2 class="sidebar-logo">Bank Admin</h2>
+    <ul class="sidebar-menu">
+      <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'pending_accounts' %}" class="active">Pending Accounts</a></li>
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="admin-main">
+    <h2>Pending Account Approvals</h2>
+    {% if accounts %}
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Account Number</th>
+        <th>User</th>
+        <th>Balance</th>
+        <th>Type</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for account in accounts %}
+      <tr>
+        <td>{{ account.account_number }}</td>
+        <td>{{ account.user.username }}</td>
+        <td>${{ account.balance }}</td>
+        <td>{{ account.account_type }}</td>
+        <td>
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="account_id" value="{{ account.id }}">
+            <button name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+            <button name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No pending accounts.</p>
+    {% endif %}
+  </main>
+
+</div>
+{% endblock %}

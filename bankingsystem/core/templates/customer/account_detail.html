@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+{% load crispy_forms_tags %}
+
+
+<h2 style="margin-bottom: 20px;">Account Details</h2>
+
+<div style="max-width: 600px; margin-bottom: 20px;">
+  <p><strong>Account ID:</strong> {{ account.id }}</p>
+  <p><strong>Owner:</strong> {{ account.owner.user.username }}</p>
+  <p><strong>Balance:</strong> {{ account.balance }}</p>
+</div>
+
+<div style="margin-bottom: 20px;">
+  <a href="{% url 'deposit' account.id %}" class="btn btn-success">Deposit</a>
+  <a href="{% url 'withdraw' account.id %}" class="btn btn-primary">Withdraw</a>
+  <a href="{% url 'transfer' account.id %}" class="btn btn-warning">Transfer</a>
+</div>
+
+{% if messages %}
+  <div style="max-width: 600px; margin-bottom: 20px;">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<h3>Balance Chart</h3>
+<div style="max-width: 800px; margin-bottom: 20px;">
+  <canvas id="balanceChart"></canvas>
+</div>
+
+<h3>Transaction History</h3>
+<table class="table table-striped" style="max-width: 800px;">
+  <thead>
+  <tr>
+    <th>Type</th>
+    <th>Amount</th>
+    <th>Date</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for txn in transactions %}
+  <tr>
+    <td>{{ txn.transaction_type|capfirst }}</td>
+    <td>{{ txn.amount }}</td>
+    <td>{{ txn.timestamp }}</td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="3">No transactions yet.</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'dashboard' %}" class="btn btn-secondary" style="margin-top: 20px;">Back to Dashboard</a>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('balanceChart').getContext('2d');
+  const balanceData = {
+    labels: [
+      {% for txn in transactions reversed %}
+        "{{ txn.timestamp|date:'Y-m-d H:i' }}"{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    ],
+    datasets: [{
+      label: 'Balance Over Time',
+      data: [
+        {% for txn in transactions reversed %}
+          {{ txn.balance_after_transaction }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      ],
+      fill: false,
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1
+    }]
+  };
+
+  const config = {
+    type: 'line',
+    data: balanceData,
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Date'
+          }
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'Balance'
+          }
+        }
+      }
+    }
+  };
+
+  new Chart(ctx, config);
+</script>
+{% endblock %}

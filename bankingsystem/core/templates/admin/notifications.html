@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="admin-container">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="sidebar-logo">Bank Admin</h2>
+    <ul class="sidebar-menu">
+      <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'all_accounts' %}">Accounts</a></li>
+      <li><a href="{% url 'all_customers' %}">Customers</a></li>
+      <li><a href="{% url 'admin_notifications' %}" class="active">Notifications</a></li>
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <main class="admin-main">
+    <h2>All Notifications</h2>
+    {% if notifications %}
+    <div class="table-container">
+      <table>
+        <thead>
+        <tr>
+          <th>User</th>
+          <th>Message</th>
+          <th>Timestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for notification in notifications %}
+        <tr>
+          <td>{{ notification.user.username }}</td>
+          <td>{{ notification.message }}</td>
+          <td>{{ notification.timestamp|date:"M d, Y H:i" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>No notifications available.</p>
+    {% endif %}
+  </main>
+</div>
+
+{% endblock %}

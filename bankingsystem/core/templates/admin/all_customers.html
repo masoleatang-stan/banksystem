@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>All Customers</h2>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Full Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for customer in customers %}
+    <tr>
+      <td>{{ customer.user.username }}</td>
+      <td>{{ customer.user.email }}</td>
+      <td>{{ customer.user.get_full_name }}</td>
+      <td>
+        <a href="{% url 'edit_customer' customer.id %}">Edit</a>
+        |
+        <a href="{% url 'delete_customer' customer.id %}">Delete</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="admin-container">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="sidebar-logo">Bank Admin</h2>
+    <ul class="sidebar-menu">
+      <li><a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a></li>
+
+      <li>
+        <a href="#">Accounts</a>
+        <ul class="submenu">
+          <li><a href="{% url 'all_accounts' %}">All Accounts</a></li>
+          <li><a href="{% url 'create_account' %}">Create Account</a></li>
+        </ul>
+      </li>
+
+      <li>
+        <a href="#">Customers</a>
+        <ul class="submenu">
+          <li><a href="{% url 'all_customers' %}">All Customers</a></li>
+          <li><a href="{% url 'add_customer' %}">Add Customer</a></li>
+        </ul>
+      </li>
+
+      <li>
+        <a href="{% url 'admin_notifications' %}">Notifications</a>
+      </li>
+
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+
+      <li>
+        <a href="#">Messages</a>
+        <ul class="submenu">
+          <li><a href="{% url 'admin_messages' %}">View Messages</a></li>
+        </ul>
+      </li>
+
+      <li>
+        <a href="#">Activity Logs</a>
+        <ul class="submenu">
+          <li><a href="{% url 'admin_activity_logs' %}">View Activity Logs</a></li>
+        </ul>
+      </li>
+
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <main class="admin-main">
+
+    <!-- Dashboard Cards -->
+    <div class="cards-grid">
+      <div class="card">
+        <h3>Total Customers</h3>
+        <p>{{ total_customers }}</p>
+        <a href="{% url 'all_customers' %}" class="btn btn-secondary btn-sm">View</a>
+      </div>
+      <div class="card">
+        <h3>Total Accounts</h3>
+        <p>{{ total_accounts }}</p>
+        <a href="{% url 'all_accounts' %}" class="btn btn-secondary btn-sm">View</a>
+      </div>
+      <div class="card">
+        <h3>Total Balance</h3>
+        <p>${{ total_balance }}</p>
+      </div>
+      <div class="card">
+        <h3>Transactions Today</h3>
+        {% if total_transactions_today > 0 %}
+        <p>{{ total_transactions_today }} transactions</p>
+        <p>Total: ${{ total_amount_today }}</p>
+        {% else %}
+        <p>No data available</p>
+        {% endif %}
+      </div>
+      <div class="card">
+        <h3>Large Transactions</h3>
+        {% if large_transactions %}
+        <ul>
+          {% for transaction in large_transactions %}
+          <li>Account {{ transaction.account.id }}: ${{ transaction.amount }} on {{ transaction.timestamp }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No large transactions found.</p>
+        {% endif %}
+      </div>
+      <div class="card">
+        <h3>Top 5 Customers by Balance</h3>
+        {% if top_customers %}
+        <ul>
+          {% for customer in top_customers %}
+          <li>{{ customer.name }}: ${{ customer.balance }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No data available</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="card">
+        <h3>Balance Over Time</h3>
+        {% if balance_history %}
+        <ul>
+          {% for item in balance_history %}
+          <li>Account {{ item.account_id }}: ${{ item.balance }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No data available</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Transaction Type Distribution</h3>
+        {% if transaction_type_summary %}
+        <ul>
+          {% for type, amount in transaction_type_summary.items %}
+          <li>{{ type }}: ${{ amount }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>No data available</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <h3>Recent Transactions</h3>
+    {% if transactions %}
+    <div class="table-container">
+      <table>
+        <thead>
+        <tr>
+          <th>Account ID</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Timestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for transaction in transactions %}
+        <tr>
+          <td>{{ transaction.account.id }}</td>
+          <td>{{ transaction.transaction_type }}</td>
+          <td>${{ transaction.amount }}</td>
+          <td>{{ transaction.timestamp }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p>No transactions available.</p>
+    {% endif %}
+
+  </main>
+</div>
+
+{% endblock %}

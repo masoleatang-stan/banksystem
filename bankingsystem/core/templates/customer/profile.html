@@ -1,0 +1,10 @@
+<h2>Update Profile</h2>
+<form method="post">{% csrf_token %}
+  <label>First Name</label>
+  <input type="text" name="first_name" value="{{ user.first_name }}" class="form-control mb-2">
+  <label>Last Name</label>
+  <input type="text" name="last_name" value="{{ user.last_name }}" class="form-control mb-2">
+  <label>Email</label>
+  <input type="email" name="email" value="{{ user.email }}" class="form-control mb-2">
+  <button class="btn btn-primary">Update</button>
+</form>

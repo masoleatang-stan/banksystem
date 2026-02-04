@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>All Accounts</h2>
+
+<table class="table table-striped">
+  <thead>
+  <tr>
+    <th>Account Number</th>
+    <th>Owner</th>
+    <th>Type</th>
+    <th>Balance</th>
+    <th>Actions</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for account in accounts %}
+  <tr>
+    <td>{{ account.account_number }}</td>
+    <td>{{ account.owner.user.username }}</td>
+    <td>{{ account.account_type }}</td>
+    <td>${{ account.balance }}</td>
+    <td>
+      <a href="{% url 'edit_account' account.id %}" class="btn btn-sm btn-primary">Edit</a>
+      <a href="{% url 'delete_account' account.id %}" class="btn btn-sm btn-danger">Delete</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
