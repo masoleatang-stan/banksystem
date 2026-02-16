@@ -1,30 +1,31 @@
+import json
+
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.db import transaction as db_transaction
+from django.db.models import Count
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
-from django.db.models import Sum, Count
-from django.utils import timezone
-from django.contrib.auth.models import User
+
 from .forms import AddCustomerForm
-from .forms import AccountForm
+from .forms import CustomerMessageForm
 from .forms import RegisterForm, AccountForm, DepositForm, WithdrawForm, TransferForm
 from .models import (
     Account,
     Notification,
-    Message,       # Our Django model for Message
-    ActivityLog,   # Our Django model for ActivityLog
+    # Our Django model for Message
+    ActivityLog,  # Our Django model for ActivityLog
     Profile,
     Transaction,
 )
-import json
-
-from .forms import CustomerMessageForm
 from .models import Message
 
 
@@ -69,25 +70,30 @@ def dashboard(request):
     else:
         return redirect('login')
 
+from django.db.models import Sum
+
 @login_required
 def admin_dashboard(request):
     profile = request.user.profile
-    # If not staff, send to customer dashboard (instead of dashboard, prevents loop)
+
+    # Redirect non-staff users
     if profile.role != 'staff':
         if profile.role == 'customer':
             return redirect('customer_dashboard')
         return redirect('login')
 
-    # Total customers and accounts
-    total_customers = Profile.objects.filter(role='customer').count()
+    # Total customers with at least one account
+    total_customers = Profile.objects.filter(role='customer', accounts__isnull=False).distinct().count()
+
+    # Total accounts and total balance
     total_accounts = Account.objects.count()
-    total_balance = Account.objects.aggregate(Sum('balance'))['balance__sum'] or 0
+    total_balance = Account.objects.aggregate(total=Sum('balance'))['total'] or 0
 
     # Transactions today
     today = timezone.now().date()
     transactions_today = Transaction.objects.filter(timestamp__date=today)
     total_transactions_today = transactions_today.count()
-    total_amount_today = transactions_today.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_amount_today = transactions_today.aggregate(total=Sum('amount'))['total'] or 0
 
     # Transaction type distribution
     transaction_type_summary = transactions_today.values('transaction_type').annotate(
@@ -96,23 +102,19 @@ def admin_dashboard(request):
     )
     transaction_type_summary_dict = {item['transaction_type']: item['total_amount'] for item in transaction_type_summary}
 
-    # Balance over time (example for chart)
-    accounts = Account.objects.all()
-    balance_history = [{'account_id': acc.id, 'balance': acc.balance} for acc in accounts]
-
     # Recent transactions
     recent_transactions = Transaction.objects.order_by('-timestamp')[:10]
 
-    # Fetch the latest notifications for admin
+    # Latest notifications for admin
     notifications = Notification.objects.filter(receiver=request.user).order_by('-timestamp')[:10]
 
-    # Step 1: Alerts for Large Transactions (threshold filter)
-    large_transaction_threshold = 10000  # You may want to make this configurable
+    # Large transactions alert
+    large_transaction_threshold = 10000
     large_transactions = Transaction.objects.filter(amount__gte=large_transaction_threshold).order_by('-amount')[:10]
 
-    # Step 1: Analytics / Charts - Top customers by total balance
+    # Top 5 customers by total balance (only those with accounts)
     top_customers = (
-        Profile.objects.filter(role='customer')
+        Profile.objects.filter(role='customer', accounts__isnull=False)
         .annotate(total_balance=Sum('accounts__balance'))
         .order_by('-total_balance')[:5]
     )
@@ -124,9 +126,8 @@ def admin_dashboard(request):
         'total_transactions_today': total_transactions_today,
         'total_amount_today': total_amount_today,
         'transaction_type_summary': transaction_type_summary_dict,
-        'balance_history': balance_history,
         'transactions': recent_transactions,
-        'notifications': notifications,  # <- Notifications added
+        'notifications': notifications,
         'large_transaction_threshold': large_transaction_threshold,
         'large_transactions': large_transactions,
         'top_customers': top_customers,
@@ -384,62 +385,46 @@ def all_customers(request):
 
 @login_required
 def add_customer(request):
+    if request.user.profile.role != 'staff':
+        return redirect('dashboard')
+
     if request.method == "POST":
         form = AddCustomerForm(request.POST)
         if form.is_valid():
-            # Create user
-            user = User.objects.create_user(
-                username=form.cleaned_data['username'],
-                email=form.cleaned_data['email'],
-                first_name=form.cleaned_data['first_name'],
-                last_name=form.cleaned_data['last_name'],
-                password=form.cleaned_data['password']
-            )
-            # Create profile
-            Profile.objects.create(user=user, role='customer')
-
-            messages.success(request, "Customer added successfully.")
-            return redirect('all_customers')
+            try:
+                # Use the form's save method
+                form.save()
+                messages.success(request, "Customer added successfully.")
+                return redirect('all_customers')
+            except ValueError as e:
+                messages.error(request, str(e))
         else:
-            # Form invalid
             messages.error(request, "Please fix the errors below.")
     else:
         form = AddCustomerForm()
 
     return render(request, 'admin/add_customer.html', {'form': form})
 
+
 @login_required
 def edit_customer(request, user_id):
-    profile = get_object_or_404(Profile, user__id=user_id)
-
     if request.user.profile.role != 'staff':
         return redirect('dashboard')
 
+    profile = get_object_or_404(Profile, user__id=user_id)
     user = profile.user
 
     if request.method == "POST":
-        form = AddCustomerForm(request.POST, instance=user)
+        form = AddCustomerForm(request.POST)
         if form.is_valid():
-            # Update user fields
-            user.username = form.cleaned_data['username']
-            user.email = form.cleaned_data['email']
-            user.first_name = form.cleaned_data['first_name']
-            user.last_name = form.cleaned_data['last_name']
-
-            # Update password only if provided
-            password = form.cleaned_data.get('password')
-            if password:
-                user.set_password(password)
-
-            user.save()  # Commit all changes
-
+            # Save changes to the existing user
+            form.save(user=user)
             messages.success(request, "Customer updated successfully.")
             return redirect('all_customers')
         else:
             messages.error(request, "Please fix the errors below.")
-
     else:
-        # Populate form with current user data
+        # Populate form with existing user data
         form = AddCustomerForm(initial={
             'username': user.username,
             'email': user.email,
@@ -606,7 +591,27 @@ def profile_update(request):
         return redirect('customer_dashboard')
     return render(request, 'customer/profile.html', {'user': user})
 
+@login_required
+def customer_messages(request):
+    user = request.user
 
+    # Get messages involving this customer
+    messages_list = Message.objects.filter(
+        receiver=user
+    ).order_by('-timestamp')
+
+    if request.method == "POST":
+        content = request.POST.get('content')
+        # Send message to admin(s)
+        admin_users = User.objects.filter(profile__role='staff')
+        for admin in admin_users:
+            Message.objects.create(sender=user, receiver=admin, content=content)
+        return redirect('customer_messages')
+
+    context = {
+        'messages': messages_list
+    }
+    return render(request, 'customer/messages.html', context)
 
 
 @login_required
@@ -631,39 +636,77 @@ def customer_profile(request):
 
 
 
+
 @login_required
 def customer_messages(request):
     user = request.user
 
-    if request.method == "POST":
-        content = request.POST.get("content")
+    if request.method == 'POST':
+        form = CustomerMessageForm(request.POST, user=user)
+        if form.is_valid():
+            msg = form.save(commit=False)
+            msg.sender = user
+            msg.save()
+            return redirect('customer_messages')
+    else:
+        form = CustomerMessageForm(user=user)
 
-        admin_users = User.objects.filter(profile__role='staff')
+    # Show messages sent or received
+    messages_list = Message.objects.filter(sender=user).union(
+        Message.objects.filter(receiver=user)
+    ).order_by('-timestamp')
 
-        for admin in admin_users:
-            Message.objects.create(
-                sender=user,
-                receiver=admin,
-                content=content,
+    return render(request, 'customer/messages.html', {
+        'form': form,
+        'messages': messages_list
+    })
 
-                # 👇 REQUIRED because DB still enforces NOT NULL
-                amount=0,
-                frequency_days=0,
-                from_account=None,
-                to_account=None,
-                next_run=timezone.now().date(),
-            )
+@login_required
+def all_customers(request):
+    if request.user.profile.role != 'staff':
+        return redirect('dashboard')
 
-        return redirect("customer_messages")
+    query = request.GET.get('q', '')
 
-    messages_list = Message.objects.filter(
-        sender=user
-    ) | Message.objects.filter(
-        receiver=user
+    customers = Profile.objects.filter(
+        role='customer'
+    ).filter(
+        Q(user__username__icontains=query) |
+        Q(user__email__icontains=query) |
+        Q(user__first_name__icontains=query) |
+        Q(user__last_name__icontains=query)
     )
 
-    messages_list = messages_list.order_by("-timestamp")
+    context = {
+        'customers': customers,
+        'query': query,
+    }
 
-    return render(request, "customer/messages.html", {
-        "messages": messages_list
-    })
+    return render(request, 'admin/all_customers.html', context)
+
+@login_required
+def view_customer(request, user_id):
+    if request.user.profile.role != 'staff':
+        return redirect('dashboard')
+
+    profile = get_object_or_404(Profile, user__id=user_id, role='customer')
+    accounts = Account.objects.filter(owner=profile)
+
+    context = {
+        'profile': profile,
+        'accounts': accounts,
+    }
+
+    return render(request, 'admin/view_customer.html', context)
+
+
+@login_required
+def customer_detail(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id, role='customer')
+    accounts = profile.accounts.all()  # related_name='accounts'
+
+    context = {
+        'profile': profile,
+        'accounts': accounts,
+    }
+    return render(request, 'admin/customer_detail.html', context)

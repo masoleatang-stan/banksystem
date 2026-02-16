@@ -52,6 +52,21 @@
   <!-- Main content -->
   <main class="admin-main">
 
+    <!-- Customer Search -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3>Search Customers</h3>
+      <form method="get" action="{% url 'all_customers' %}">
+        <input
+          type="text"
+          name="q"
+          placeholder="Search by username, email, or name"
+          value="{{ request.GET.q }}"
+          style="padding: 8px; width: 70%; max-width: 400px;"
+          required
+        >
+        <button type="submit" class="btn btn-secondary">Search</button>
+      </form>
+    </div>
     <!-- Dashboard Cards -->
     <div class="cards-grid">
       <div class="card">

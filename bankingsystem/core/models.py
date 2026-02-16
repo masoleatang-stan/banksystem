@@ -91,25 +91,13 @@ class Message(models.Model):
     # Optional fields for transfers / auto messages
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     frequency_days = models.IntegerField(null=True, blank=True)
-    from_account = models.ForeignKey(
-        'Account',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='messages_from'
-    )
-    to_account = models.ForeignKey(
-        'Account',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='messages_to'
-    )
+    from_account = models.ForeignKey('Account', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages_from')
+    to_account = models.ForeignKey('Account', on_delete=models.SET_NULL, null=True, blank=True, related_name='messages_to')
     next_run = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"From {self.sender.username} to {self.receiver.username} at {self.timestamp}"
-
+    
     class AutoTransfer(models.Model):
         user = models.ForeignKey(User, on_delete=models.CASCADE)
     from_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='from_auto')

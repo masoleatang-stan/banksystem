@@ -65,36 +65,31 @@ class AddCustomerForm(forms.Form):
     email = forms.EmailField()
     first_name = forms.CharField(max_length=30)
     last_name = forms.CharField(max_length=30)
-    password = forms.CharField(widget=forms.PasswordInput, required=False)
-    confirm_password = forms.CharField(widget=forms.PasswordInput, required=False)
+    password = forms.CharField(widget=forms.PasswordInput, required=True)  # REQUIRED now
+    confirm_password = forms.CharField(widget=forms.PasswordInput, required=True)
 
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
         confirm = cleaned_data.get("confirm_password")
-        if password and password != confirm:
+        if password != confirm:
             raise forms.ValidationError("Passwords do not match")
         return cleaned_data
 
     def save(self, user=None):
-        """
-        Creates a new customer if 'user' is None, otherwise updates the existing user.
-        Automatically creates or updates the Profile.
-        """
         data = self.cleaned_data
 
         if user is None:
-            # CREATE NEW USER
-            user = User.objects.create(
+            # CREATE NEW USER using create_user (handles hashing and NOT NULL)
+            user = User.objects.create_user(
                 username=data['username'],
                 email=data['email'],
                 first_name=data['first_name'],
                 last_name=data['last_name'],
-                password=make_password(data['password'])  # hash password
+                password=data['password']  # create_user hashes automatically
             )
             # Create profile for new customer
             Profile.objects.get_or_create(user=user, defaults={'role': 'customer'})
-
         else:
             # UPDATE EXISTING USER
             user.username = data['username']
@@ -102,17 +97,14 @@ class AddCustomerForm(forms.Form):
             user.first_name = data['first_name']
             user.last_name = data['last_name']
 
-            # Update password only if provided
             if data.get('password'):
                 user.set_password(data['password'])
 
             user.save()
-
             # Ensure profile exists
             Profile.objects.get_or_create(user=user, defaults={'role': 'customer'})
 
         return user
-
 class AccountForm(forms.ModelForm):
     class Meta:
         model = Account

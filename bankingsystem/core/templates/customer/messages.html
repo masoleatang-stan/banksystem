@@ -1,53 +1,32 @@
+
 {% extends "base.html" %}
-
+{% load crispy_forms_tags %}
 {% block content %}
-<h1>Messages / Support</h1>
 
-<!-- Send message -->
-<form method="post" class="mb-4">
+<h1>Messages / Feedback</h1>
+
+<!-- Send message form -->
+<form method="post">
   {% csrf_token %}
-  <div class="form-group">
-    <label for="content">Message to Admin</label>
-    <textarea
-            name="content"
-            id="content"
-            class="form-control"
-            rows="4"
-            required
-            placeholder="Type your message here..."
-    ></textarea>
-  </div>
-
-  <button type="submit" class="btn btn-primary mt-2">
-    Send Message
-  </button>
+  {{ form|crispy }}
+  <button type="submit" class="btn btn-primary mt-2">Send</button>
 </form>
 
 <hr>
 
 <h2>Your Messages</h2>
-
-{% if messages %}
-<ul class="list-group">
+<ul>
   {% for msg in messages %}
-  <li class="list-group-item">
-    <strong>
-      {% if msg.sender == user %}
-      You →
-      {% else %}
-      Admin →
-      {% endif %}
-    </strong>
-    {{ msg.content }}
-    <br>
-    <small class="text-muted">
-      {{ msg.timestamp|date:"M d, Y H:i" }}
-    </small>
+  <li>
+    {% if msg.sender == user %}
+    <strong>To {{ msg.receiver.username }}:</strong> {{ msg.content }} - {{ msg.timestamp|date:"M d, Y H:i" }}
+    {% else %}
+    <strong>From {{ msg.sender.username }}:</strong> {{ msg.content }} - {{ msg.timestamp|date:"M d, Y H:i" }}
+    {% endif %}
   </li>
+  {% empty %}
+  <li>No messages yet.</li>
   {% endfor %}
 </ul>
-{% else %}
-<p>No messages yet.</p>
-{% endif %}
 
 {% endblock %}

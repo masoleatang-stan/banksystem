@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Customer Profile</h2>
+
+<div class="card">
+  <p><strong>Name:</strong> {{ profile.user.get_full_name }}</p>
+  <p><strong>Username:</strong> {{ profile.user.username }}</p>
+  <p><strong>Email:</strong> {{ profile.user.email }}</p>
+  <p><strong>Role:</strong> {{ profile.role }}</p>
+</div>
+
+<hr>
+
+<h3>Customer Accounts</h3>
+
+{% if accounts %}
+<table>
+  <thead>
+  <tr>
+    <th>Account ID</th>
+    <th>Type</th>
+    <th>Status</th>
+    <th>Balance</th>
+    <th>Created</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for account in accounts %}
+  <tr>
+    <td>{{ account.id }}</td>
+    <td>{{ account.account_type }}</td>
+    <td>{{ account.status }}</td>
+    <td>${{ account.balance }}</td>
+    <td>{{ account.created_at }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>This customer has no accounts.</p>
+{% endif %}
+
+<a href="{% url 'all_customers' %}" class="btn">← Back to Customers</a>
+
+{% endblock %}

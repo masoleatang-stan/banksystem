@@ -1,0 +1,43 @@
+<h2>Customer Profile</h2>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <p><strong>Username:</strong> {{ profile.user.username }}</p>
+    <p><strong>Email:</strong> {{ profile.user.email }}</p>
+    <p><strong>Full Name:</strong> {{ profile.user.first_name }} {{ profile.user.last_name }}</p>
+    <p><strong>Role:</strong> {{ profile.role }}</p>
+  </div>
+</div>
+
+<h3>Accounts</h3>
+
+<table class="table table-bordered">
+  <thead>
+  <tr>
+    <th>Account ID</th>
+    <th>Type</th>
+    <th>Balance</th>
+    <th>Status</th>
+    <th>Created</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for account in accounts %}
+  <tr>
+    <td>#{{ account.id }}</td>
+    <td>{{ account.account_type|title }}</td>
+    <td>{{ account.balance }}</td>
+    <td>{{ account.status|title }}</td>
+    <td>{{ account.created_at }}</td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="5">No accounts found.</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'all_customers' %}" class="btn btn-secondary">
+  Back to Customers
+</a>
